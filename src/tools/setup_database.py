@@ -6,7 +6,12 @@ table = {
     "active_players": "data/raw/*/active_players.csv",
     "gamelog": "data/raw/*/gamelog.csv",
     "all_games": "data/raw/*/all_games.csv",
-    "pbp": "data/raw/*/PlaybyPlayData/*.csv"
+    "playbyplay": "data/raw/*/PlaybyPlayData/*.csv",
+    "advanced": "data/raw/*/AdvancedData/*.csv",
+    "defensive": "data/raw/*/DefensiveData/*.csv",
+    "fourfactors": "data/raw/*/FourFactorsData/*.csv",
+    "hustle": "data/raw/*/HustleData/*.csv",
+
 }
 
 db_path = "data/raw/db/nba.duckdb"

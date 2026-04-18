@@ -1,0 +1,220 @@
+# =============================================================================
+# NBA DATA HEADER NORMALIZATION REGISTRY
+# =============================================================================
+# Maps every raw source column name → canonical internal schema name
+# Usage:
+#   df.rename(columns=MASTER_MAP, inplace=True)
+#   df = df[[c for c in df.columns if c in KEEP_COLUMNS]]
+# =============================================================================
+
+MASTER_MAP = {
+
+    # -------------------------------------------------------------------------
+    # IDENTIFIERS
+    # -------------------------------------------------------------------------
+    "gameId":               "game_id",
+    "GAME_ID":              "game_id",
+    "teamId":               "team_id",
+    "TEAM_ID":              "team_id",
+    "personId":             "player_id",
+    "PLAYER_ID":            "player_id",
+    "SEASON_ID":            "season_id",
+    "SEASON_YEAR":          "season_id",
+
+    # -------------------------------------------------------------------------
+    # PLAYER INFO
+    # -------------------------------------------------------------------------
+    "firstName":            "first_name",
+    "familyName":           "last_name",
+    "PLAYER_NAME":          "player_name",
+    "playerName":           "player_name",       # play-by-play
+    "nameI":                "name_initial",
+    "playerNameI":          "name_initial",
+    "NICKNAME":             "nickname",
+    "playerSlug":           "player_slug",
+    "position":             "position",
+    "START_POSITION":       "position",
+    "jerseyNum":            "jersey_num",
+    "comment":              "comment",
+    "COMMENT":              "comment",
+    "AGE":                  "age",
+
+    # -------------------------------------------------------------------------
+    # TEAM INFO
+    # -------------------------------------------------------------------------
+    "teamCity":             "team_city",
+    "TEAM_CITY":            "team_city",
+    "teamName":             "team_name",
+    "TEAM_NAME":            "team_name",
+    "teamTricode":          "team_abbrev",
+    "TEAM_ABBREVIATION":    "team_abbrev",
+    "teamSlug":             "team_slug",
+
+    # -------------------------------------------------------------------------
+    # GAME INFO
+    # -------------------------------------------------------------------------
+    "GAME_DATE":            "game_date",
+    "MATCHUP":              "matchup",
+    "WL":                   "win_loss",
+    "TEAM_COUNT":           "team_count",
+    "AVAILABLE_FLAG":       "available_flag",
+
+    # -------------------------------------------------------------------------
+    # MINUTES  (appears in every table, multiple formats)
+    # -------------------------------------------------------------------------
+    "minutes":              "minutes",
+    "MIN":                  "minutes",
+    "MINUTES":              "minutes",
+    "MIN_SEC":              "minutes_sec",        # MM:SS string, parse separately
+
+    # -------------------------------------------------------------------------
+    # BASE BOX SCORE STATS
+    # -------------------------------------------------------------------------
+    "PTS":                  "pts",
+    "pts":                  "pts",
+    "FGM":                  "fgm",
+    "FGA":                  "fga",
+    "FG_PCT":               "fg_pct",
+    "FG3M":                 "fg3m",
+    "FG3A":                 "fg3a",
+    "FG3_PCT":              "fg3_pct",
+    "FTM":                  "ftm",
+    "FTA":                  "fta",
+    "FT_PCT":               "ft_pct",
+    "OREB":                 "off_reb",
+    "DREB":                 "def_reb",
+    "REB":                  "reb",
+    "AST":                  "ast",
+    "TOV":                  "tov",
+    "STL":                  "stl",
+    "BLK":                  "blk",
+    "BLKA":                 "blka",
+    "PF":                   "pf",
+    "PFD":                  "pfd",
+    "PLUS_MINUS":           "plus_minus",
+
+    # -------------------------------------------------------------------------
+    # SEASON AGGREGATE (active_players / gamelog)
+    # -------------------------------------------------------------------------
+    "GP":                   "games_played",
+    "W":                    "wins",
+    "L":                    "losses",
+    "W_PCT":                "win_pct",
+    "DD2":                  "double_doubles",
+    "TD3":                  "triple_doubles",
+    "NBA_FANTASY_PTS":      "nba_fantasy_pts",
+    "WNBA_FANTASY_PTS":     "wnba_fantasy_pts",
+
+    # -------------------------------------------------------------------------
+    # ADVANCED STATS
+    # -------------------------------------------------------------------------
+    "offensiveRating":              "off_rating",
+    "estimatedOffensiveRating":     "est_off_rating",
+    "defensiveRating":              "def_rating",
+    "estimatedDefensiveRating":     "est_def_rating",
+    "netRating":                    "net_rating",
+    "estimatedNetRating":           "est_net_rating",
+    "assistPercentage":             "ast_pct",
+    "assistToTurnover":             "ast_tov",
+    "assistRatio":                  "ast_ratio",
+    "offensiveReboundPercentage":   "off_reb_pct",
+    "defensiveReboundPercentage":   "def_reb_pct",
+    "reboundPercentage":            "reb_pct",
+    "turnoverRatio":                "tov_ratio",
+    "effectiveFieldGoalPercentage": "efg_pct",
+    "trueShootingPercentage":       "ts_pct",
+    "usagePercentage":              "usage_pct",
+    "estimatedUsagePercentage":     "est_usage_pct",
+    "estimatedPace":                "est_pace",
+    "pace":                         "pace",
+    "pacePer40":                    "pace_per40",
+    "possessions":                  "possessions",
+    "PIE":                          "pie",
+
+    # -------------------------------------------------------------------------
+    # FOUR FACTORS
+    # -------------------------------------------------------------------------
+    "freeThrowAttemptRate":         "ft_rate",
+    "teamTurnoverPercentage":       "team_tov_pct",
+    "oppEffectiveFieldGoalPercentage": "opp_efg_pct",
+    "oppFreeThrowAttemptRate":      "opp_ft_rate",
+    "oppTeamTurnoverPercentage":    "opp_tov_pct",
+    "oppOffensiveReboundPercentage":"opp_off_reb_pct",
+
+    # -------------------------------------------------------------------------
+    # HUSTLE STATS
+    # -------------------------------------------------------------------------
+    "CONTESTED_SHOTS":              "contested_shots",
+    "CONTESTED_SHOTS_2PT":          "contested_shots_2pt",
+    "CONTESTED_SHOTS_3PT":          "contested_shots_3pt",
+    "DEFLECTIONS":                  "deflections",
+    "CHARGES_DRAWN":                "charges_drawn",
+    "SCREEN_ASSISTS":               "screen_assists",
+    "SCREEN_AST_PTS":               "screen_ast_pts",
+    "OFF_LOOSE_BALLS_RECOVERED":    "off_loose_balls_recovered",
+    "DEF_LOOSE_BALLS_RECOVERED":    "def_loose_balls_recovered",
+    "LOOSE_BALLS_RECOVERED":        "loose_balls_recovered",
+    "OFF_BOXOUTS":                  "off_boxouts",
+    "DEF_BOXOUTS":                  "def_boxouts",
+    "BOX_OUT_PLAYER_TEAM_REBS":     "boxout_team_rebs",
+    "BOX_OUT_PLAYER_REBS":          "boxout_player_rebs",
+    "BOX_OUTS":                     "box_outs",
+
+    # -------------------------------------------------------------------------
+    # PLAY-BY-PLAY
+    # -------------------------------------------------------------------------
+    "actionNumber":         "action_number",
+    "clock":                "clock",
+    "period":               "period",
+    "xLegacy":              "x_coord",
+    "yLegacy":              "y_coord",
+    "shotDistance":         "shot_distance",
+    "shotResult":           "shot_result",
+    "isFieldGoal":          "is_field_goal",
+    "scoreHome":            "score_home",
+    "scoreAway":            "score_away",
+    "pointsTotal":          "points_total",
+    "location":             "location",
+    "description":          "description",
+    "actionType":           "action_type",
+    "subType":              "sub_type",
+    "videoAvailable":       "video_available",
+    "shotValue":            "shot_value",
+    "actionId":             "action_id",
+}
+
+
+# =============================================================================
+# COLUMNS TO DROP AFTER NORMALIZATION
+# =============================================================================
+# Ranking columns and redundant fields add noise and storage cost.
+# Drop everything matching these patterns post-rename.
+
+DROP_SUFFIXES = ("_rank", "_RANK")
+
+DROP_COLUMNS = {
+    # Redundant after normalization
+    "team_slug",
+    "name_initial",
+    "nickname",
+    "available_flag",
+    "nba_fantasy_pts",
+    "wnba_fantasy_pts",
+    "pace_per40",       # redundant with pace
+    "reb_pct",          # redundant with off_reb_pct + def_reb_pct
+    "ast_ratio",        # redundant with ast_pct once pace controlled
+    "est_usage_pct",    # use usage_pct; never include both simultaneously
+    "est_pace",         # use pace; never include both simultaneously
+    # Estimated vs actual — keep actual for pre-game historical,
+    # keep estimated for live in-game. Drop the other at feature build time,
+    # not here — flag for feature engineering layer to resolve.
+}
+
+
+# =============================================================================
+# CANONICAL SCHEMA PER TABLE
+# =============================================================================
+# After renaming, each table should contain exactly these columns.
+# Any extra columns not in this set get dropped.
+# Any missing columns get filled with None and flagged.
+
