@@ -19,8 +19,8 @@ import requests
 
 #config:
 root = "/Users/austin/Apps/FinalNBA/data/raw/"
-start_year = 2020
-end_year = 2025
+start_year = 2019
+end_year = 2020
 base_delay = 30
 long_pause_time = 30
 max_attempts = 5
@@ -54,7 +54,7 @@ def backoff(data_type, current_id, attempt = 0):
             print(f"Attempt {attempt} waiting {wait_time}")
             time.sleep(wait_time)
             print("Wait complete...\nAttempting to reset api")
-            df = master_id_endpoint(current_id, data_type)
+            master_id_endpoint(current_id, data_type)
             attempt = 0
             break
         except Exception as e:
@@ -151,7 +151,7 @@ def creategameIDdata(data_type):
                 
             df.to_csv(data_path, index=False)
             current_game_data += 1
-            print(f"Saved! {calculate_percent_completion(current_game_data,total_game_data)} complete!")
+            print(f"{data_type} {calculate_percent_completion(current_game_data,total_game_data)} complete!")
 
 def reset_http():
     print("Savoir Reset")
@@ -209,10 +209,8 @@ if __name__ == "__main__":
         
         
         creategameIDdata("playbyplay")
-        
         creategameIDdata("advanced")
         creategameIDdata("defensive")
-    
         creategameIDdata("fourfactors")
         creategameIDdata("hustle")
 

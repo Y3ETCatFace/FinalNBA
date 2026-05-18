@@ -6,7 +6,6 @@
 #   df.rename(columns=MASTER_MAP, inplace=True)
 #   df = df[[c for c in df.columns if c in KEEP_COLUMNS]]
 # =============================================================================
-
 MASTER_MAP = {
 
     # -------------------------------------------------------------------------
@@ -27,7 +26,7 @@ MASTER_MAP = {
     "firstName":            "first_name",
     "familyName":           "last_name",
     "PLAYER_NAME":          "player_name",
-    "playerName":           "player_name",       # play-by-play
+    "playerName":           "player_name",
     "nameI":                "name_initial",
     "playerNameI":          "name_initial",
     "NICKNAME":             "nickname",
@@ -60,7 +59,7 @@ MASTER_MAP = {
     "AVAILABLE_FLAG":       "available_flag",
 
     # -------------------------------------------------------------------------
-    # MINUTES  (appears in every table, multiple formats)
+    # MINUTES
     # -------------------------------------------------------------------------
     "minutes":              "minutes",
     "MIN":                  "minutes",
@@ -72,6 +71,7 @@ MASTER_MAP = {
     # -------------------------------------------------------------------------
     "PTS":                  "pts",
     "pts":                  "pts",
+    "playerPoints":         "pts",
     "FGM":                  "fgm",
     "FGA":                  "fga",
     "FG_PCT":               "fg_pct",
@@ -83,11 +83,14 @@ MASTER_MAP = {
     "FT_PCT":               "ft_pct",
     "OREB":                 "off_reb",
     "DREB":                 "def_reb",
+    "defensiveRebounds":    "def_reb",
     "REB":                  "reb",
     "AST":                  "ast",
     "TOV":                  "tov",
     "STL":                  "stl",
+    "steals":               "stl",
     "BLK":                  "blk",
+    "blocks":               "blk",
     "BLKA":                 "blka",
     "PF":                   "pf",
     "PFD":                  "pfd",
@@ -134,12 +137,12 @@ MASTER_MAP = {
     # -------------------------------------------------------------------------
     # FOUR FACTORS
     # -------------------------------------------------------------------------
-    "freeThrowAttemptRate":         "ft_rate",
-    "teamTurnoverPercentage":       "team_tov_pct",
-    "oppEffectiveFieldGoalPercentage": "opp_efg_pct",
-    "oppFreeThrowAttemptRate":      "opp_ft_rate",
-    "oppTeamTurnoverPercentage":    "opp_tov_pct",
-    "oppOffensiveReboundPercentage":"opp_off_reb_pct",
+    "freeThrowAttemptRate":             "ft_rate",
+    "teamTurnoverPercentage":           "team_tov_pct",
+    "oppEffectiveFieldGoalPercentage":  "opp_efg_pct",
+    "oppFreeThrowAttemptRate":          "opp_ft_rate",
+    "oppTeamTurnoverPercentage":        "opp_tov_pct",
+    "oppOffensiveReboundPercentage":    "opp_off_reb_pct",
 
     # -------------------------------------------------------------------------
     # HUSTLE STATS
@@ -159,6 +162,21 @@ MASTER_MAP = {
     "BOX_OUT_PLAYER_TEAM_REBS":     "boxout_team_rebs",
     "BOX_OUT_PLAYER_REBS":          "boxout_player_rebs",
     "BOX_OUTS":                     "box_outs",
+
+    # -------------------------------------------------------------------------
+    # DEFENSIVE MATCHUP STATS
+    # -------------------------------------------------------------------------
+    "matchupMinutes":               "matchup_minutes",
+    "partialPossessions":           "partial_possessions",
+    "switchesOn":                   "switches_on",
+    "matchupAssists":               "matchup_ast",
+    "matchupTurnovers":             "matchup_tov",
+    "matchupFieldGoalsMade":        "matchup_fgm",
+    "matchupFieldGoalsAttempted":   "matchup_fga",
+    "matchupFieldGoalPercentage":   "matchup_fg_pct",
+    "matchupThreePointersMade":     "matchup_fg3m",
+    "matchupThreePointersAttempted":"matchup_fg3a",
+    "matchupThreePointerPercentage":"matchup_fg3_pct",
 
     # -------------------------------------------------------------------------
     # PLAY-BY-PLAY
@@ -182,39 +200,3 @@ MASTER_MAP = {
     "shotValue":            "shot_value",
     "actionId":             "action_id",
 }
-
-
-# =============================================================================
-# COLUMNS TO DROP AFTER NORMALIZATION
-# =============================================================================
-# Ranking columns and redundant fields add noise and storage cost.
-# Drop everything matching these patterns post-rename.
-
-DROP_SUFFIXES = ("_rank", "_RANK")
-
-DROP_COLUMNS = {
-    # Redundant after normalization
-    "team_slug",
-    "name_initial",
-    "nickname",
-    "available_flag",
-    "nba_fantasy_pts",
-    "wnba_fantasy_pts",
-    "pace_per40",       # redundant with pace
-    "reb_pct",          # redundant with off_reb_pct + def_reb_pct
-    "ast_ratio",        # redundant with ast_pct once pace controlled
-    "est_usage_pct",    # use usage_pct; never include both simultaneously
-    "est_pace",         # use pace; never include both simultaneously
-    # Estimated vs actual — keep actual for pre-game historical,
-    # keep estimated for live in-game. Drop the other at feature build time,
-    # not here — flag for feature engineering layer to resolve.
-}
-
-
-# =============================================================================
-# CANONICAL SCHEMA PER TABLE
-# =============================================================================
-# After renaming, each table should contain exactly these columns.
-# Any extra columns not in this set get dropped.
-# Any missing columns get filled with None and flagged.
-
