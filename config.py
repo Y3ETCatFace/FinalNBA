@@ -1,6 +1,20 @@
+from collections import deque
+import sys
+
+from numpy import average
 import pandas as pd
-from nba_api.stats.endpoints import leaguedashplayerstats
+import duckdb as db
 
-df = leaguedashplayerstats.LeagueDashPlayerStats(season="2024-25",season_type_all_star="Regular Season").get_data_frames()[0]
+db_path = "data/db/nba.db"
+con = db.connect(db_path)
 
-df.to_csv("player_stats.csv", index = False)
+
+con.sql(f"SELECT * FROM active_players WHERE team_abbrev = 'BKN' and season_id = 22024 ORDER BY player_name").show()
+
+if input("exit? ") == "y":
+    sys.exit()
+for i in range(0, 30, 5):
+    new = con.sql(f"SELECT plus_minus from master_nba WHERE {i} <= reb AND reb < {i + 5}").df()
+    fah = new['plus_minus'].to_list()
+
+    print(f'Average plus minus for {i} to {i + 5} rebounds is: {average(fah)}')

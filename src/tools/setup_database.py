@@ -2,7 +2,7 @@ import duckdb
 import os
 from pathlib import Path
 import table_schema
-import normilize
+import table_schema
 import pandas as pd
 import sys
 
@@ -24,7 +24,7 @@ def get_connection():
         Path(db_path).parent.mkdir(exist_ok=True, parents=True)
     return duckdb.connect(db_path)
     
-RENAMES = normilize.MASTER_MAP
+RENAMES = table_schema.MASTER_MAP
 whitebool = True
 
 def data_ingest(con):
@@ -43,5 +43,13 @@ def data_ingest(con):
 if __name__ == "__main__":
     with get_connection() as con:
         data_ingest(con)
+        con.sql('CREATE TABLE master_nba AS ' \
+        'SELECT * FROM gamelog ' \
+        'LEFT JOIN advanced ON gamelog.player_id = advanced.player_id AND gamelog.game_id = advanced.game_id ' \
+        'LEFT JOIN defensive ON gamelog.player_id = defensive.player_id AND gamelog.game_id = defensive.game_id ' \
+        'LEFT JOIN fourfactors ON gamelog.player_id = fourfactors.player_id AND gamelog.game_id = fourfactors.game_id ' \
+        'LEFT JOIN hustle ON gamelog.player_id = hustle.player_id AND gamelog.game_id = hustle.game_id')
+        con.sql('SHOW TABLES').show()
+        con.sql('SELECT * FROM master_nba LIMIT 5').show()
 
    
