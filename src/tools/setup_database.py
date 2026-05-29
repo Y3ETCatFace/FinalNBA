@@ -1,8 +1,7 @@
 import duckdb
 import os
 from pathlib import Path
-import table_schema
-import table_schema
+from tool_config import MASTER_MAP, TABLE_SCHEMA
 import pandas as pd
 import sys
 
@@ -24,18 +23,17 @@ def get_connection():
         Path(db_path).parent.mkdir(exist_ok=True, parents=True)
     return duckdb.connect(db_path)
     
-RENAMES = table_schema.MASTER_MAP
 whitebool = True
 
 def data_ingest(con):
     if not os.path.exists(db_path):
         Path(db_path).parent.mkdir(exist_ok=True, parents=True)
-    for data_type, meta in table_schema.TABLE_SCHEMA.items():
+    for data_type, meta in TABLE_SCHEMA.items():
         path = f"{raw_path}{meta["path"]}"
         whitelist = meta['whitelist']
         george = con.read_csv(path, quotechar='"')
         col = george.columns
-        filter = {f: s for f, s in RENAMES.items() if f in col and (s in whitelist if whitebool else True)}
+        filter = {f: s for f, s in MASTER_MAP.items() if f in col and (s in whitelist if whitebool else True)}
         master_string = ", ".join(f"{f} as {s}" for f, s in filter.items())
         con.sql(f"CREATE TABLE {data_type} AS SELECT {master_string} FROM george")
         print(f"\n{data_type} succesfully created!\n")
@@ -45,11 +43,12 @@ if __name__ == "__main__":
         data_ingest(con)
         con.sql('CREATE TABLE master_nba AS ' \
         'SELECT * FROM gamelog ' \
-        'LEFT JOIN advanced ON gamelog.player_id = advanced.player_id AND gamelog.game_id = advanced.game_id ' \
-        'LEFT JOIN defensive ON gamelog.player_id = defensive.player_id AND gamelog.game_id = defensive.game_id ' \
-        'LEFT JOIN fourfactors ON gamelog.player_id = fourfactors.player_id AND gamelog.game_id = fourfactors.game_id ' \
-        'LEFT JOIN hustle ON gamelog.player_id = hustle.player_id AND gamelog.game_id = hustle.game_id')
+        'LEFT JOIN advanced USING (player_id, game_id) ' \
+        'LEFT JOIN defensive USING (player_id, game_id) ' \
+        'LEFT JOIN fourfactors USING (player_id, game_id) ' \
+        'LEFT JOIN hustle USING (player_id, game_id)')
         con.sql('SHOW TABLES').show()
         con.sql('SELECT * FROM master_nba LIMIT 5').show()
+        print(con.sql('SELECT * FROM master_nba').columns)
 
    
