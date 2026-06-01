@@ -3,6 +3,7 @@ is_home = True
 days_since = True
 is_back_to_back = True
 games_played = True
+distance_travled = True
 
 TABLE_SCHEMA = {
     # ── JOINED TABLES ──────────────────────────────────────────────
@@ -307,184 +308,184 @@ geo = {
     # ── Eastern Conference ─────────────────────────────────────────
     1610612737: {
         "arena": "State Farm Arena",
-        "lat": 33.7573, "lon": -84.3963,
+        "coords": (33.7573, -84.3963),
         "elevation_ft": 1026,
         "tz": "America/New_York", "utc_st": -5, "utc_dst": -4,
     },
     1610612738: {
         "arena": "TD Garden",
-        "lat": 42.3662, "lon": -71.0621,
+        "coords": (42.3662, -71.0621),
         "elevation_ft": 141,
         "tz": "America/New_York", "utc_st": -5, "utc_dst": -4,
     },
     1610612751: {
         "arena": "Barclays Center",
-        "lat": 40.6826, "lon": -73.9754,
+        "coords": (40.6826, -73.9754),
         "elevation_ft": 33,
         "tz": "America/New_York", "utc_st": -5, "utc_dst": -4,
     },
     1610612766: {
         "arena": "Spectrum Center",
-        "lat": 35.2251, "lon": -80.8392,
+        "coords": (35.2251, -80.8392),
         "elevation_ft": 748,
         "tz": "America/New_York", "utc_st": -5, "utc_dst": -4,
     },
     1610612741: {
         "arena": "United Center",
-        "lat": 41.8807, "lon": -87.6742,
+        "coords": (41.8807, -87.6742),
         "elevation_ft": 597,
         "tz": "America/Chicago", "utc_st": -6, "utc_dst": -5,
     },
     1610612739: {
         "arena": "Rocket Mortgage FieldHouse",
-        "lat": 41.4965, "lon": -81.6882,
+        "coords": (41.4965, -81.6882),
         "elevation_ft": 653,
         "tz": "America/New_York", "utc_st": -5, "utc_dst": -4,
     },
     1610612765: {
         "arena": "Little Caesars Arena",
-        "lat": 42.3410, "lon": -83.0550,
+        "coords": (42.3410, -83.0550),
         "elevation_ft": 600,
         "tz": "America/Detroit", "utc_st": -5, "utc_dst": -4,
     },
     1610612754: {
         "arena": "Gainbridge Fieldhouse",
-        "lat": 39.7639, "lon": -86.1555,
+        "coords": (39.7639, -86.1555),
         "elevation_ft": 715,
         "tz": "America/Indiana/Indianapolis", "utc_st": -5, "utc_dst": -4,
     },
     1610612748: {
         "arena": "Kaseya Center",
-        "lat": 25.7814, "lon": -80.1870,
+        "coords": (25.7814, -80.1870),
         "elevation_ft": 6,
         "tz": "America/New_York", "utc_st": -5, "utc_dst": -4,
     },
     1610612749: {
         "arena": "Fiserv Forum",
-        "lat": 43.0450, "lon": -87.9170,
+        "coords": (43.0450, -87.9170),
         "elevation_ft": 617,
         "tz": "America/Chicago", "utc_st": -6, "utc_dst": -5,
     },
     1610612752: {
         "arena": "Madison Square Garden",
-        "lat": 40.7505, "lon": -73.9934,
+        "coords": (40.7505, -73.9934),
         "elevation_ft": 33,
         "tz": "America/New_York", "utc_st": -5, "utc_dst": -4,
     },
     1610612753: {
         "arena": "Kia Center",
-        "lat": 28.5392, "lon": -81.3839,
+        "coords": (28.5392, -81.3839),
         "elevation_ft": 96,
         "tz": "America/New_York", "utc_st": -5, "utc_dst": -4,
     },
     1610612755: {
         "arena": "Wells Fargo Center",
-        "lat": 39.9012, "lon": -75.1720,
+        "coords": (39.9012, -75.1720),
         "elevation_ft": 39,
         "tz": "America/New_York", "utc_st": -5, "utc_dst": -4,
     },
     1610612761: {
         "arena": "Scotiabank Arena",
-        "lat": 43.6435, "lon": -79.3791,
+        "coords": (43.6435, -79.3791),
         "elevation_ft": 249,
         "tz": "America/Toronto", "utc_st": -5, "utc_dst": -4,
     },
     1610612764: {
         "arena": "Capital One Arena",
-        "lat": 38.8981, "lon": -77.0209,
+        "coords": (38.8981, -77.0209),
         "elevation_ft": 410,
         "tz": "America/New_York", "utc_st": -5, "utc_dst": -4,
     },
- 
+
     # ── Western Conference ─────────────────────────────────────────
     1610612742: {
         "arena": "American Airlines Center",
-        "lat": 32.7905, "lon": -96.8103,
+        "coords": (32.7905, -96.8103),
         "elevation_ft": 430,
         "tz": "America/Chicago", "utc_st": -6, "utc_dst": -5,
     },
     1610612743: {
         "arena": "Ball Arena",
-        "lat": 39.7487, "lon": -105.0077,
-        "elevation_ft": 5280,   # strongest elevation stressor in the NBA
+        "coords": (39.7487, -105.0077),
+        "elevation_ft": 5280,
         "tz": "America/Denver", "utc_st": -7, "utc_dst": -6,
     },
     1610612744: {
         "arena": "Chase Center",
-        "lat": 37.7680, "lon": -122.3877,
+        "coords": (37.7680, -122.3877),
         "elevation_ft": 20,
         "tz": "America/Los_Angeles", "utc_st": -8, "utc_dst": -7,
     },
     1610612745: {
         "arena": "Toyota Center",
-        "lat": 29.7508, "lon": -95.3621,
+        "coords": (29.7508, -95.3621),
         "elevation_ft": 43,
         "tz": "America/Chicago", "utc_st": -6, "utc_dst": -5,
     },
     1610612746: {
         "arena": "Intuit Dome",
-        "lat": 33.8430, "lon": -118.3617,
+        "coords": (33.8430, -118.3617),
         "elevation_ft": 118,
         "tz": "America/Los_Angeles", "utc_st": -8, "utc_dst": -7,
     },
     1610612747: {
         "arena": "Crypto.com Arena",
-        "lat": 34.0430, "lon": -118.2673,
+        "coords": (34.0430, -118.2673),
         "elevation_ft": 285,
         "tz": "America/Los_Angeles", "utc_st": -8, "utc_dst": -7,
     },
     1610612763: {
         "arena": "FedExForum",
-        "lat": 35.1382, "lon": -90.0505,
+        "coords": (35.1382, -90.0505),
         "elevation_ft": 284,
         "tz": "America/Chicago", "utc_st": -6, "utc_dst": -5,
     },
     1610612750: {
         "arena": "Target Center",
-        "lat": 44.9795, "lon": -93.2760,
+        "coords": (44.9795, -93.2760),
         "elevation_ft": 815,
         "tz": "America/Chicago", "utc_st": -6, "utc_dst": -5,
     },
     1610612740: {
         "arena": "Smoothie King Center",
-        "lat": 29.9490, "lon": -90.0812,
+        "coords": (29.9490, -90.0812),
         "elevation_ft": 6,
         "tz": "America/Chicago", "utc_st": -6, "utc_dst": -5,
     },
     1610612760: {
         "arena": "Paycom Center",
-        "lat": 35.4634, "lon": -97.5151,
+        "coords": (35.4634, -97.5151),
         "elevation_ft": 1201,
         "tz": "America/Chicago", "utc_st": -6, "utc_dst": -5,
     },
     1610612756: {
         "arena": "Footprint Center",
-        "lat": 33.4457, "lon": -112.0712,
+        "coords": (33.4457, -112.0712),
         "elevation_ft": 1086,
         "tz": "America/Phoenix", "utc_st": -7, "utc_dst": -7,
     },
     1610612757: {
         "arena": "Moda Center",
-        "lat": 45.5316, "lon": -122.6668,
+        "coords": (45.5316, -122.6668),
         "elevation_ft": 50,
         "tz": "America/Los_Angeles", "utc_st": -8, "utc_dst": -7,
     },
     1610612758: {
         "arena": "Golden 1 Center",
-        "lat": 38.5805, "lon": -121.4994,
+        "coords": (38.5805, -121.4994),
         "elevation_ft": 30,
         "tz": "America/Los_Angeles", "utc_st": -8, "utc_dst": -7,
     },
     1610612759: {
         "arena": "Frost Bank Center",
-        "lat": 29.4270, "lon": -98.4375,
+        "coords": (29.4270, -98.4375),
         "elevation_ft": 650,
         "tz": "America/Chicago", "utc_st": -6, "utc_dst": -5,
     },
     1610612762: {
         "arena": "Delta Center",
-        "lat": 40.7683, "lon": -111.9011,
-        "elevation_ft": 4226,   # second-highest elevation stressor in the NBA
+        "coords": (40.7683, -111.9011),
+        "elevation_ft": 4226,
         "tz": "America/Denver", "utc_st": -7, "utc_dst": -6,
     },
 }

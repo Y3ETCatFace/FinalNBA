@@ -47,8 +47,12 @@ if __name__ == "__main__":
         'LEFT JOIN defensive USING (player_id, game_id) ' \
         'LEFT JOIN fourfactors USING (player_id, game_id) ' \
         'LEFT JOIN hustle USING (player_id, game_id)')
-        con.sql('SHOW TABLES').show()
-        con.sql('SELECT * FROM master_nba LIMIT 5').show()
-        print(con.sql('SELECT * FROM master_nba').columns)
+        for table in ['all_games', 'master_nba']:
+            con.execute(f'ALTER TABLE {table} ADD COLUMN opponent_id INT')
+            con.execute(f"UPDATE {table} t SET opponent_id = opp.team_id FROM {table} opp WHERE t.game_id = opp.game_id AND t.team_id != opp.team_id")
+            con.sql(f'SELECT opponent_id FROM {table}').show()
+            con.sql('SHOW TABLES').show()
+            con.sql('SELECT * FROM master_nba LIMIT 5').show()
+            print(con.sql('SELECT * FROM master_nba').columns)
 
    
