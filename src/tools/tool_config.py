@@ -3,7 +3,10 @@ is_home = True
 days_since = True
 is_back_to_back = True
 games_played = True
-distance_travled = True
+distance_traveled = True
+top_ten = True
+create_flip = True
+
 
 TABLE_SCHEMA = {
     # ── JOINED TABLES ──────────────────────────────────────────────
@@ -100,6 +103,12 @@ TABLE_SCHEMA = {
         ],
         "path": "active_players.csv",
     },
+    "biometrics" : {
+        "whitelist": [
+            'height', 'weight', 'season_exp', 'school', 'player_name'
+        ],
+        'path': 'biometrics.csv'
+    }
 }
 # =============================================================================
 # NBA DATA HEADER NORMALIZATION REGISTRY
@@ -114,6 +123,11 @@ MASTER_MAP = {
     # -------------------------------------------------------------------------
     # IDENTIFIERS
     # -------------------------------------------------------------------------
+    "DISPLAY_FIRST_LAST":   "player_name",
+    "SCHOOL":               "school",
+    'SEASON_EXP':           "season_exp",
+    "HEIGHT":               'height',
+    'WEIGHT':               "weight",
     "gameId":               "game_id",
     "GAME_ID":              "game_id",
     "teamId":               "team_id",

@@ -2,13 +2,13 @@ from collections import deque
 import numpy as np
 import duckdb as db
 from setup_database import db_path
-from tool_config import avg_opp_elo, is_home, days_since, is_back_to_back, games_played, geo, distance_travled
+from tool_config import avg_opp_elo, is_home, days_since, is_back_to_back, games_played, geo, distance_traveled, top_ten, create_flip
 from statistics import mean
 import pandas as pd
 from geopy.distance import geodesic
 import time
 
-
+sql_lib = 'src/tools'
 grain = 'game_id, team_id'
 
 def calculate_elo(elo_a, elo_b, outcome, 
@@ -40,7 +40,7 @@ def sql_script(path):
         return sql.read()
 
 def create_avg_opp_elo_col(con):
-    df = con.sql(f"SELECT {grain}, season_id, CASE WHEN plus_minus > 0 THEN 1 ELSE 0 END as outcome, matchup FROM all_games ORDER BY game_date, game_id").df()
+    df = con.sql(f"SELECT {grain}, season_id, plus_minus, CASE WHEN plus_minus > 0 THEN 1 ELSE 0 END as outcome, matchup FROM all_games ORDER BY game_date, game_id").df()
     df['elo'] = pd.NA
     df['opponent_id'] = pd.array([pd.NA] * len(df), dtype='Int64')  # capital I
     for i in range(0, len(df), 2):
@@ -84,7 +84,7 @@ def create_avg_opp_elo_col(con):
         if opp_id not in elo_window:
             elo_window[opp_id] = deque(maxlen=16)
         elo_window[opp_id].append(df.iloc[i]['elo'])
-    df.drop(columns=['opponent_id', 'matchup', 'season_id'], inplace=True) #-------------------------------------------
+    df.drop(columns=['opponent_id', 'matchup', 'elo'], inplace=True) #-------------------------------------------
     con.sql('CREATE TABLE training_data AS SELECT * FROM df')
 
 def create_is_home(con):
@@ -94,13 +94,13 @@ def create_is_home(con):
     con.execute('UPDATE training_data t SET is_home = d.is_home FROM df d WHERE d.game_id = t.game_id AND d.team_id = t.team_id')
 
 def create_days_since(con):
-    con.sql(sql_script('src/tools/days_since.sql'))
+    con.sql(sql_script(f'{sql_lib}/days_since.sql'))
 
 def create_is_back_to_back(con):
-    con.sql(sql_script('src/tools/back_to_back.sql'))
+    con.sql(sql_script(f'{sql_lib}/back_to_back.sql'))
 
 def create_games_played(con):
-    con.sql(sql_script('src/tools/games_played.sql'))
+    con.sql(sql_script(f'{sql_lib}/games_played.sql'))
 
 def create_distance_travled(con):
     coords = []
@@ -121,16 +121,23 @@ def create_distance_travled(con):
     con.sql('UPDATE training_data t SET distance_traveled = f.distance_traveled FROM df f WHERE t.game_id = f.game_id AND t.team_id = f.team_id')
     con.sql('SELECT * FROM training_data').show()
         
-    
+def create_top_ten(con):
+    df = con.sql(sql_script(f'{sql_lib}/top_ten.sql')).df()
+    df = df.pivot(index=['team_id', 'game_id'], columns='rnk', values = [x for x in df.columns if x not in ['team_id', 'game_id', 'rnk']])
+    df.reset_index(inplace=True)
+    df.columns = [x[0] if x[0] in ['team_id', 'game_id'] else f'{x[0]}_{x[1]}' for x in df.columns]
+    for col in [c for c in df.columns if c not in ['game_id', 'team_id']]:
+        con.execute(f'ALTER TABLE training_data ADD column {col} FLOAT')
+        con.execute(f'UPDATE training_data t SET {col} = f.{col} FROM df f WHERE t.game_id = f.game_id AND t.team_id = f.team_id')
+
 def flip(con):
     cols = con.sql(f'SELECT * FROM training_data').columns
-    filt_col = [x for x in cols if x not in ['plus_minus', 'game_id', 'team_id, is_home']]
+    filt_col = [x for x in cols if x not in ['plus_minus', 'game_id', 'team_id', 'is_home', 'outcome']]
     flip_string_update = ', '.join(f'opponent_{col} = opp.{col}' for col in filt_col)
-    flip_string_alter = "; ".join(f'ALTER TABLE training_data ADD COLUMN opponent_{col} FLOAT' for col in filt_col)
-    print(flip_string_alter)
+    flip_string_alter = "; ".join(f'ALTER TABLE training_data ADD COLUMN "opponent_{col}" FLOAT' for col in filt_col)
     con.execute(f'{flip_string_alter}')
     con.execute(f'UPDATE training_data t SET {flip_string_update} FROM training_data opp WHERE t.game_id = opp.game_id AND t.team_id != opp.team_id')
-
+    print(con.sql('SELECT * FROM training_data').columns)
 
 if __name__ == "__main__":
     con = db.connect(db_path)
@@ -144,7 +151,12 @@ if __name__ == "__main__":
         create_is_back_to_back(con)
     if games_played:
         create_games_played(con)
-    if distance_travled:
+    if distance_traveled:
         create_distance_travled(con)
+    if top_ten:
+        create_top_ten(con)
+    if create_flip:
+        print(f'flip is {flip}')
+        flip(con)
     
 

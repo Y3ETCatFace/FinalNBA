@@ -10,6 +10,7 @@ from nba_api.stats.endpoints import BoxScoreAdvancedV3
 from nba_api.stats.endpoints import BoxScoreTraditionalV3
 from nba_api.stats.endpoints import HustleStatsBoxScore
 from nba_api.stats.endpoints import BoxScoreDefensiveV2
+from nba_api.stats.endpoints import CommonAllPlayers
 import os
 import time
 import sys
@@ -20,13 +21,13 @@ import requests
 #config:
 root = "/Users/austin/Apps/FinalNBA/data/raw/"
 start_year = 2019
-end_year = 2020
+end_year = 2025
 base_delay = 30
 long_pause_time = 30
 max_attempts = 5
 # Assuming your column is named 'player_id'
 
-def master_id_endpoint(game_id, endpoint):
+def master_game_id_endpoint(game_id, endpoint):
     try:
         df = endpoint_map[endpoint](game_id=game_id, timeout=50).get_data_frames()[0 if endpoint!="hustle" else 1]
         return df
@@ -34,7 +35,6 @@ def master_id_endpoint(game_id, endpoint):
         print(f"Game for {game_id} doesn't exist using endpoint {endpoint}. Creating blank csv")
         print(e)
         return pd.DataFrame()
-
 
 def season_range(first, second):
     year_list = []
@@ -54,13 +54,16 @@ def backoff(data_type, current_id, attempt = 0):
             print(f"Attempt {attempt} waiting {wait_time}")
             time.sleep(wait_time)
             print("Wait complete...\nAttempting to reset api")
-            master_id_endpoint(current_id, data_type)
-            attempt = 0
-            break
+            if data_type != 'biometrics':
+                df = master_game_id_endpoint(current_id, data_type)
+                return df
+            else:
+                df = CommonPlayerInfo(player_id=current_id, timeout=20).get_data_frames()[0]
+                return df
         except Exception as e:
-            print(f"{e} Failed retry {attempt}/{max_attempts} ")
-    else:
-        print("api failure system quit")
+            print(f"{e} Failed retry {attempt}/{max_attempts} ")    
+    print("api failure system quit")
+    sys.exit(1)
 
 def getRandom():
     if random.random() <= 0.5:
@@ -107,7 +110,6 @@ endpoint_map = {
 def creategameIDdata(data_type):
     long_pause_every = random.randint(70, 90)
     data_root = f"{root}{season}/{data_type}/"
-    attempt = 0
     request_counter = 1
     game_id_df = pd.read_csv(all_games_path, usecols=["GAME_ID"], dtype={'GAME_ID': str})
     game_list = game_id_df['GAME_ID'].unique().tolist()
@@ -131,62 +133,106 @@ def creategameIDdata(data_type):
             current_id = game_list.pop()
             data_path = f"{data_root}{current_id}.csv"
             if os.path.exists(data_path):
-                print(f"{data_type} Skipped! {calculate_percent_completion(current_game_data,total_game_data)}")
+                print(f"{season} {data_type} Skipped! {calculate_percent_completion(current_game_data,total_game_data)}")
                 continue
             try:
                 request_counter += 1
                 if random.random() < 0.02:
                     getRandom()     
-                df = master_id_endpoint(current_id, data_type)
+                df = master_game_id_endpoint(current_id, data_type)
                 time.sleep(random.uniform(0.8, 1.6))
             except (ValueError, JSONDecodeError) as e:
                 print(f"Error decoding JSON response for game ID {current_id} using endpoint {data_type}.")
                 reset_http()
-                backoff(data_type, current_id)
-            
+                df = backoff(data_type, current_id)
             except (ReadTimeout, ConnectTimeout) as e:
                 print(f"{e} Error fetching {data_type} data for game ID {current_id}. Attempting to reset API and retry...")
                 reset_http()
-                backoff(data_type, current_id)
-                
+                df = backoff(data_type, current_id)
             df.to_csv(data_path, index=False)
             current_game_data += 1
-            print(f"{data_type} {calculate_percent_completion(current_game_data,total_game_data)} complete!")
+            print(f"{season} {data_type} {calculate_percent_completion(current_game_data,total_game_data)} complete!")
 
-def reset_http():
+def create_biometrics(season):
+    long_pause_every = random.randint(70, 90)
+    df = pd.read_csv(f"{root}/{season}/active_players.csv", usecols=["PLAYER_ID"])
+    player_ids = df['PLAYER_ID'].tolist()
+    saved_ids = pd.read_csv(f"{root}/{season}/biometrics.csv", usecols=["PERSON_ID"])['PERSON_ID'].tolist() if os.path.exists(f"{root}/{season}/biometrics.csv") else []
+    player_bio = []
+    request_counter = 0
+    if set(player_ids) != set(saved_ids):
+        for i, id in enumerate(player_ids):
+            if id in saved_ids:
+                print(f"Player ID {id} biometrics already saved! Skipping... {calculate_percent_completion(i+1, len(player_ids))}")
+                continue
+            request_counter += 1
+            if long_pause_every == request_counter:
+                print("Waiting Safe Delay")
+                time.sleep(long_pause_time)
+                request_counter = 0
+            try:
+                player_info = CommonPlayerInfo(player_id=id, timeout=20).get_data_frames()[0]
+                player_bio.append(player_info)
+                print(f"Player ID {id} biometrics saved {calculate_percent_completion(i+1, len(player_ids))}!")
+                time.sleep(random.uniform(0.8, 1.6))
+            except (ValueError, JSONDecodeError) as e:
+                print(f"Error decoding JSON response for player ID {id}.")
+                reset_http()
+                player_info = backoff("playerinfo", id, 'player_id')
+                player_bio.append(player_info)
+            except (ReadTimeout, ConnectTimeout) as e:
+                print(f"{e} Error fetching player info for player ID {id}. Attempting to reset API and retry...")
+                reset_http()
+                player_info = backoff("playerinfo", id, 'player_id')
+                player_bio.append(player_info)
+                print(f"Player ID {id} biometrics saved after retry {calculate_percent_completion(i+1, len(player_ids))}!")
+            except Exception as e:
+                print(f"An unexpected error occurred for player ID {id}: {e}")
+                reset_http()
+                pd.concat(player_bio, ignore_index=True).to_csv(f"{root}/{season}/biometrics.csv", index=False) 
+                sys.exit(1)
+        df = pd.concat(player_bio, ignore_index=True)
+        df.to_csv(f"{root}/{season}/biometrics.csv", index=False)
+        print(f"Biometrics for season {season} created!")
+    else:
+        print(f"Biometrics for season {season} already exists and matches active players! Skipping...")
+
+def reset_http():   
     print("Savoir Reset")
     for adapter in requests.sessions.Session().adapters.values():
         adapter.close()
 
 if __name__ == "__main__":
     for season in season_range(start_year, end_year): #Verifys players in season
-        skeleton_save_path = f"{root}{season}/active_players.csv"
-        log_save_path = f"{root}{season}/gamelog.csv"
-        all_games_save_path = f"{root}{season}/all_games.csv"
+        season_paths = {
+            f"{root}{season}/active_players.csv": {
+                'endpoint': LeagueDashPlayerStats, 
+                'params': {'season': season, 'season_type_all_star': "Regular Season"}
+            },
+            f"{root}{season}/gamelog.csv": {
+                'endpoint': PlayerGameLogs, 
+                'params': {'season_nullable': season, 'season_type_nullable': 'Regular Season', 'timeout': 20}
+            },
+            f"{root}{season}/all_games.csv": {
+                'endpoint': LeagueGameFinder, 
+                'params': {'season_nullable': season, 'player_or_team_abbreviation': "T", 'season_type_nullable': "Regular Season"}
+            },
+        }
         if not os.path.exists(f"{root}{season}"):
             Path(f"{root}{season}").mkdir(exist_ok=True, parents=True)
-        if os.path.exists(skeleton_save_path) and os.path.exists(all_games_save_path) and os.path.exists(log_save_path):
-            print(f"Season {season} data already exists.")
+        if all(os.path.exists(path) for path in season_paths):
+            print(f"Season {season} data already exists.\n")
         else:
-            if not os.path.exists(skeleton_save_path):
-                df = LeagueDashPlayerStats(season=season,season_type_all_star="Regular Season").get_data_frames()[0]
-                df['SEASON_ID'] = str(f"2{season}")[:5]
-                df.to_csv(skeleton_save_path, index = False)
-                print("players for season " + season + " created!")
-            else:
-                print(f"{season} players already exists\n")
-            if not os.path.exists(all_games_save_path):
-                df = LeagueGameFinder(season_nullable=season,player_or_team_abbreviation = "T", season_type_nullable="Regular Season").get_data_frames()[0]
-                df.to_csv(all_games_save_path, index = False)
-                print(season + " games created!")
-            else:
-                print(f"{season} games already exists\n")
-            if not os.path.exists(log_save_path):
-                df = PlayerGameLogs(season_nullable = season, season_type_nullable= 'Regular Season', timeout = 20).get_data_frames()[0]
-                df.to_csv(log_save_path, index= False)
-                print(season + " gamelog created!")
-            else:
-                print(f"{season} gamelog already exists\n")
+            for path, df in season_paths.items():
+                if not os.path.exists(path):
+                    if path == f"{root}{season}/active_players.csv":
+                        df['SEASON_ID'] = str(f"2{season}")[:5]
+                    season_paths[path]['endpoint'](**season_paths[path]['params']).get_data_frames()[0].to_csv(path, index=False)
+                    print(f"{path[45:-4]} for season {season} created!")
+                else:
+                    print(f"{season} {path[45:-4]} already exists\n")
+        create_biometrics(season)
+    
     print("first testing connection\n")
     try:
         lebron_test = CommonPlayerInfo(player_id = 2544, timeout=5)
@@ -194,20 +240,15 @@ if __name__ == "__main__":
         print(f"\n{df}")
     except (ReadTimeout, ConnectTimeout):
         print("Could not print: The request timed out. The NBA server is likely busy.")
-
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
-
     resume_id = input("\nType 'kill' to terminate ")
     if resume_id.lower() == "kill":
         sys.exit(1)
-
+    
     for season in season_range(start_year, end_year):
         print(f"\n\n--------------------------\nNow working on season {season}")
-        all_games_path = f"{root}{season}/all_games.csv"
-        log_save_path = f"{root}{season}/gamelog.csv"
-        
-        
+        all_games_path = f"{root}{season}/all_games.csv"        
         creategameIDdata("playbyplay")
         creategameIDdata("advanced")
         creategameIDdata("defensive")
