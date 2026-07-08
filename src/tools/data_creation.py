@@ -27,12 +27,23 @@ long_pause_time = 30
 max_attempts = 5
 # Assuming your column is named 'player_id'
 
-def master_game_id_endpoint(game_id, endpoint):
+def master_game_id_endpoint(current_id, data_type):
+    time.sleep(random.uniform(0.8, 1.6))
     try:
-        df = endpoint_map[endpoint](game_id=game_id, timeout=50).get_data_frames()[0 if endpoint!="hustle" else 1]
+        df = endpoint_map[data_type](game_id=current_id, timeout=50).get_data_frames()[0 if data_type!="hustle" else 1]
+        return df
+    except (ValueError, JSONDecodeError) as e:
+        print(f"Error decoding JSON response for game ID {current_id} using endpoint {data_type}.")
+        reset_http()
+        df = backoff(data_type, current_id)
+        return df
+    except (ReadTimeout, ConnectTimeout) as e:
+        print(f"{e} Error fetching {data_type} data for game ID {current_id}. Attempting to reset API and retry...")
+        reset_http()
+        df = backoff(data_type, current_id)
         return df
     except AttributeError as e:
-        print(f"Game for {game_id} doesn't exist using endpoint {endpoint}. Creating blank csv")
+        print(f"Game for {current_id} doesn't exist using endpoint {data_type}. Creating blank csv")
         print(e)
         return pd.DataFrame()
 
@@ -45,22 +56,22 @@ def season_range(first, second):
         
     return year_list
 
-def backoff(data_type, current_id, attempt = 0):
+def backoff(data_type, current_id, attempt = 1):
     while attempt < max_attempts:
         print(f"Current attempt is {attempt}")
         try:
-            attempt += 1
             wait_time = base_delay * (2 ** attempt)
             print(f"Attempt {attempt} waiting {wait_time}")
             time.sleep(wait_time)
             print("Wait complete...\nAttempting to reset api")
             if data_type != 'biometrics':
-                df = master_game_id_endpoint(current_id, data_type)
+                df = endpoint_map[data_type](game_id=current_id, timeout=50).get_data_frames()[0 if data_type!="hustle" else 1]
                 return df
             else:
                 df = CommonPlayerInfo(player_id=current_id, timeout=20).get_data_frames()[0]
                 return df
         except Exception as e:
+            attempt += 1
             print(f"{e} Failed retry {attempt}/{max_attempts} ")    
     print("api failure system quit")
     sys.exit(1)
@@ -104,10 +115,9 @@ endpoint_map = {
     "defensive": BoxScoreDefensiveV2,
     "hustle": HustleStatsBoxScore,
     "advanced": BoxScoreAdvancedV3,
-    "gamelog": PlayerGameLogs
 }
 
-def creategameIDdata(data_type):
+def creategameIDdata(data_type, count = 0):
     long_pause_every = random.randint(70, 90)
     data_root = f"{root}{season}/{data_type}/"
     request_counter = 1
@@ -121,10 +131,10 @@ def creategameIDdata(data_type):
     if files == game_set:
         print("All " + data_type + " data matchs game_list for season " + season)
     else:
-        current_game_data = len(os.listdir(data_root))
         total_game_data = len(game_list)
         print(f"Now buiding {data_type} data for {season}")
         while game_list:
+            count += 1
             if request_counter == long_pause_every:
                 long_pause_every = random.randint(70, 90)
                 print("Waiting Safe Delay")
@@ -133,25 +143,14 @@ def creategameIDdata(data_type):
             current_id = game_list.pop()
             data_path = f"{data_root}{current_id}.csv"
             if os.path.exists(data_path):
-                print(f"{season} {data_type} Skipped! {calculate_percent_completion(current_game_data,total_game_data)}")
+                print(f"{season} {data_type} Skipped! {calculate_percent_completion(count,total_game_data)}")
                 continue
-            try:
-                request_counter += 1
-                if random.random() < 0.02:
-                    getRandom()     
-                df = master_game_id_endpoint(current_id, data_type)
-                time.sleep(random.uniform(0.8, 1.6))
-            except (ValueError, JSONDecodeError) as e:
-                print(f"Error decoding JSON response for game ID {current_id} using endpoint {data_type}.")
-                reset_http()
-                df = backoff(data_type, current_id)
-            except (ReadTimeout, ConnectTimeout) as e:
-                print(f"{e} Error fetching {data_type} data for game ID {current_id}. Attempting to reset API and retry...")
-                reset_http()
-                df = backoff(data_type, current_id)
+            request_counter += 1
+            if random.random() < 0.02:
+                getRandom()     
+            df = master_game_id_endpoint(current_id, data_type)
             df.to_csv(data_path, index=False)
-            current_game_data += 1
-            print(f"{season} {data_type} {calculate_percent_completion(current_game_data,total_game_data)} complete!")
+            print(f"{season} {data_type} {calculate_percent_completion(count,total_game_data)} complete!")
 
 def create_biometrics(season):
     long_pause_every = random.randint(70, 90)
@@ -163,7 +162,7 @@ def create_biometrics(season):
     if set(player_ids) != set(saved_ids):
         for i, id in enumerate(player_ids):
             if id in saved_ids:
-                print(f"Player ID {id} biometrics already saved! Skipping... {calculate_percent_completion(i+1, len(player_ids))}")
+                print(f"Player ID {id} biometrics already saved! Skipping... {calculate_percent_completion(i+1, len(player_ids))}\n")
                 continue
             request_counter += 1
             if long_pause_every == request_counter:
@@ -173,7 +172,7 @@ def create_biometrics(season):
             try:
                 player_info = CommonPlayerInfo(player_id=id, timeout=20).get_data_frames()[0]
                 player_bio.append(player_info)
-                print(f"Player ID {id} biometrics saved {calculate_percent_completion(i+1, len(player_ids))}!")
+                print(f"{season} Player ID {id} biometrics saved {calculate_percent_completion(i+1, len(player_ids))}!")
                 time.sleep(random.uniform(0.8, 1.6))
             except (ValueError, JSONDecodeError) as e:
                 print(f"Error decoding JSON response for player ID {id}.")
@@ -195,7 +194,7 @@ def create_biometrics(season):
         df.to_csv(f"{root}/{season}/biometrics.csv", index=False)
         print(f"Biometrics for season {season} created!")
     else:
-        print(f"Biometrics for season {season} already exists and matches active players! Skipping...")
+        print(f"Biometrics for season {season} already exists and matches active players! Skipping...\n")
 
 def reset_http():   
     print("Savoir Reset")
@@ -221,16 +220,20 @@ if __name__ == "__main__":
         if not os.path.exists(f"{root}{season}"):
             Path(f"{root}{season}").mkdir(exist_ok=True, parents=True)
         if all(os.path.exists(path) for path in season_paths):
-            print(f"Season {season} data already exists.\n")
+            print(f"Season {season} data already exists.")
         else:
-            for path, df in season_paths.items():
+            for path, other in season_paths.items():
                 if not os.path.exists(path):
+                    if path[-14:-4] == 'biometrics':
+                        print('skipping bio man')
+                        continue
+                    df = season_paths[path]['endpoint'](**season_paths[path]['params']).get_data_frames()[0]
                     if path == f"{root}{season}/active_players.csv":
                         df['SEASON_ID'] = str(f"2{season}")[:5]
-                    season_paths[path]['endpoint'](**season_paths[path]['params']).get_data_frames()[0].to_csv(path, index=False)
-                    print(f"{path[45:-4]} for season {season} created!")
+                    df.to_csv(path, index=False)
+                    print(f"\n{path[45:-4]} for season {season} created!")
                 else:
-                    print(f"{season} {path[45:-4]} already exists\n")
+                    print(f"{season} {path[45:-4]} already exists")
         create_biometrics(season)
     
     print("first testing connection\n")
@@ -254,5 +257,4 @@ if __name__ == "__main__":
         creategameIDdata("defensive")
         creategameIDdata("fourfactors")
         creategameIDdata("hustle")
-
-
+print("\n\n")
