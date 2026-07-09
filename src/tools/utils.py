@@ -574,3 +574,96 @@ geo = {
         "tz": "America/Denver", "utc_st": -7, "utc_dst": -6,
     },
 }
+
+nba_team_map = {
+    # ATLANTA HAWKS
+    "ATLANTA HAWKS": "ATL",
+    
+    # BOSTON CELTICS
+    "BOSTON CELTICS": "BOS",
+    
+    # BROOKLYN NETS
+    "BROOKLYN NETS": "BKN",
+    
+    # CHARLOTTE HORNETS
+    "CHARLOTTE HORNETS": "CHA",
+    
+    # CHICAGO BULLS
+    "CHICAGO BULLS": "CHI",
+    
+    # CLEVELAND CAVALIERS
+    "CLEVELAND CAVALIERS": "CLE",
+    
+    # DALLAS MAVERICKS
+    "DALLAS MAVERICKS": "DAL",
+    
+    # DENVER NUGGETS
+    "DENVER NUGGETS": "DEN",
+    
+    # DETROIT PISTONS
+    "DETROIT PISTONS": "DET",
+    
+    # GOLDEN STATE WARRIORS
+    "GOLDEN STATE WARRIORS": "GSW",
+    
+    # HOUSTON ROCKETS
+    "HOUSTON ROCKETS": "HOU",
+    
+    # INDIANA PACERS
+    "INDIANA PACERS": "IND",
+    
+    # LOS ANGELES CLIPPERS
+    "LOS ANGELES CLIPPERS": "LAC",
+    "LA CLIPPERS": "LAC",  # Model safety backup
+    
+    # LOS ANGELES LAKERS
+    "LOS ANGELES LAKERS": "LAL",
+    
+    # MEMPHIS GRIZZLIES
+    "MEMPHIS GRIZZLIES": "MEM",
+    
+    # MIAMI HEAT
+    "MIAMI HEAT": "MIA",
+    
+    # MILWAUKEE BUCKS
+    "MILWAUKEE BUCKS": "MIL",
+    
+    # MINNESOTA TIMBERWOLVES
+    "MINNESOTA TIMBERWOLVES": "MIN",
+    
+    # NEW ORLEANS PELICANS
+    "NEW ORLEANS PELICANS": "NOP",
+    
+    # NEW YORK KNICKS
+    "NEW YORK KNICKS": "NYK",
+    
+    # OKLAHOMA CITY THUNDER
+    "OKLAHOMA CITY THUNDER": "OKC",
+    
+    # ORLANDO MAGIC
+    "ORLANDO MAGIC": "ORL",
+    
+    # PHILADELPHIA 76ERS
+    "PHILADELPHIA 76ERS": "PHI",
+    
+    # PHOENIX SUNS
+    "PHOENIX SUNS": "PHX",
+    
+    # PORTLAND TRAIL BLAZERS
+    "PORTLAND TRAIL BLAZERS": "POR",
+    
+    # SACRAMENTO KINGS
+    "SACRAMENTO KINGS": "SAC",
+    
+    # SAN ANTONIO SPURS
+    "SAN ANTONIO SPURS": "SAS",
+    
+    # TORONTO RAPTORS
+    "TORONTO RAPTORS": "TOR",
+    
+    # UTAH JAZZ
+    "UTAH JAZZ": "UTA",
+    
+    # WASHINGTON WIZARDS
+    "WASHINGTON WIZARDS": "WAS"
+}
