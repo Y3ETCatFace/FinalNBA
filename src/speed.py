@@ -6,41 +6,45 @@ from tools.utils import nba_team_map
 import json
 
 async def main():     
-    api = API()  # or API("accounts.db")    
-    with open('data/x_ids.json', 'r') as f:
-        name_to_id = json.load(f)
+    api = API()  # or API("accounts.db")   
 
     next_team = Twitter(
         api=api, 
-        sources = ["ShamsCharania"], 
-        name = 'next_team',
-        prompt = f'You are an NBA transaction extraction model. Analyze the news text and return EXACTLY one of two formats: 1. Player Full Name, Full Team Name (e.g., Lebron James, Utah Jazz) OR 2. sad. Rules for matching: Only return the player and team name if the text explicitly reports a completed or confirmed player move to a DIFFERENT NBA team. Treat these words as CONFIRMED: has agreed to a deal with, has agreed to a contract with, has agreed to sign with, is signing with, will sign with, has signed with, has been traded to, is being traded to, has been acquired by, is joining, is headed to, lands with, has reached an agreement with, finalizing a deal with. Return sad if the text contains rumors, speculation, or incomplete moves (e.g., interested in, considering, target, pursuing, expected to, could, may, might, likely, discussions, talks, negotiations, meetings, finalists, exploring, hopes to, plans to). Also return sad if: the player stays with the same team (re-signing/extension), no destination team is stated, or the text is about injuries, retirement, the draft, coaching, or waivers. CRITICAL FORMATTING: Do not wrap your response in markdown, code blocks, or backticks. Do not include any filler text, periods, or extra words. Output exactly one line with either Player Full Name, Full Team Name or sad.'
+        sources = ["ShellyCooper26"], 
+        name="next_team",
+        prompt = "Rule Your default output for all text is exactly Nothing Important You must only change this output to the format Player Name, Team Name if the text explicitly confirms a completed signing or trade where a player joins a team If a player is being waived released bought out or leaving a team without a team confirmed you must output exactly Nothing Important Never extract a player name or use a comma if they are just leaving a team or if the team is missing Examples Text Celtics sign Jrue Holiday Output Jrue Holiday, Boston Celtics Text Nets waive Carter Ellis Output Nothing Important Text Suns part ways with Jordan Pierce Output Nothing Important",
+        decline_words=["offer sheet", "right to match", "days to match", "hours to match", "matching period", "in talks", "discussing", "exploring", "monitoring", "checking in on", "gauging interest", "expressed interest", "linked to", "eyeing", "mutual interest", "floated", "downplay", "denies", "denied", "shot down", "no truth to", "quashed", "not expected to be traded", "will finish out his contract", "bought out", 'buyout', "collapsed", "stalled", "unlikely", "remains unclear"]
     )
+        
     test = Kalshi(
         'data/speed-2.pem', 
         '4beb2212-be89-4f64-b02b-fa7cf5ce5b5e', 
         'https://external-api.demo.kalshi.co')
-
-    await next_team.ensure_account()
+    
+    await next_team.add_account()
     await next_team.update_id()
     
+    with open('data/temp_res.json', 'r') as f:
+        player_to_ticker = json.load(f)
+    with open('data/x_ids.json', 'r') as f:
+        name_to_id = json.load(f)
+
     try:
         while True:
-            message = await next_team.ping_account(name_to_id)
-            message_list = [item.strip() for item in message.split(",")]
-            if 'LEBRON JAMES' in message_list:
-                abrev = nba_team_map[message_list[1]]
-                print(abrev)
-                print(test.create_payload('ask', 100, f'KXNEXTTEAMNBA-26LJAM-{abrev}'))
-                response = test.post('/portfolio/events/orders', test.create_payload('bid', 100, f'KXNEXTTEAMNBA-26LJAM-{abrev}'))
-                if response.status_code == 201:
-                    order = response.json()
-                    print(f"Order placed successfully!")
-                    print(f"Order ID: {order['order_id']}")
-                    print(f"Remaining Count: {order['remaining_count']}")
-                else:
-                    print(f"Error: {response.status_code} - {response.text}")
-                break
+            message, time = await next_team.ping_account(name_to_id)
+            if message and ',' in message:
+                try:
+                    message_list = [item.strip() for item in message.split(",")]
+                    abrev = nba_team_map[message_list[1]]
+                    event_ticker = player_to_ticker[message_list[0]]
+                    response = test.create_order(side='bid', price='0.92', amount = 100, market_ticker=f'{event_ticker}-{abrev}')
+                    if response.status_code == 201:
+                        print(f"Order placed successfully!")
+                    else:
+                        print(f"Error: {response.status_code} - {response.text}")
+                except:
+                    print(f'\nList error or not mapped for {message_list}')
+            await time
     finally:
         import datetime
         with open('data/x_ids.json', 'w') as f:

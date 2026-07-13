@@ -667,3 +667,6 @@ nba_team_map = {
     # WASHINGTON WIZARDS
     "WASHINGTON WIZARDS": "WAS"
 }
+important_series = {
+    'next_team': 'kxnextteamnba'
+}
