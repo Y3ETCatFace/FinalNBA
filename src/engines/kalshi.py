@@ -6,6 +6,8 @@ from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.asymmetric import padding
 import uuid
+import asyncio
+import json
 
 
 api_key_id = ["08a25890-a8fa-4e96-a105-f133a36bde34", "4beb2212-be89-4f64-b02b-fa7cf5ce5b5e"]
@@ -89,17 +91,17 @@ class Kalshi:
             params['tickers'] = tickers
         return self.get('/events', params)
     
-    """
-    def create_event_name_map(self, series_ticker, describe_action):
-        events = self.get_events(series_ticker=series_ticker, limit=20)
+    async def create_event_name_map(self, series_ticker, describe_action, limit):
+        from engines.fast_scraper import ask_ai
+        events = self.get_events(series_ticker=series_ticker, limit=limit)
         responce = events.json()
         name_to_event_ticker = {}
         for event in responce['events']:
             print(event['title'])
             print(event['event_ticker'])
-            name = await ask_ai(f'Only return TWO WORDS A FIRST NAME AND LAST ex. (John Adams) What is the NBA players full name in this title or rather what are the first two words of this sentence what is the name? Dont say anything else just his first and last name from this title I am about to show you: {event["title"]}')
-            print(name)
-            """
-      
-
+            name = await ask_ai(f'{describe_action} {event['title']}')
+            name_to_event_ticker[name.upper()] = event['event_ticker']
+        with open('data/runtime/temp_res.json', 'w') as f:
+            json.dump(name_to_event_ticker, f, indent=4)
+        
 
