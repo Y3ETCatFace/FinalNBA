@@ -6,34 +6,28 @@ from tools.utils import nba_team_map
 import json
 import datetime
 
-async def main():     
-    api = API()  # or API("accounts.db")   
+real = Kalshi(
+    'data/credentials/final.pem',
+    'e0aa7334-2f4a-481c-8ba6-a3773e57599c',
+    'https://external-api.kalshi.com'
+)
 
+
+async def next_team():     
     next_team = Twitter(
-        api=api, 
         sources = ["ShamsCharania"],
         name="next_team",
         prompt = "Rule: Output exactly 'Nothing Important' by default. Only change this if the text explicitly confirms a player's team for next season, whether by new signing, trade, re-signing, or extension (the team does not need to be new). Only consider the FIRST player named in the text — ignore every other player mentioned, even in a trade involving multiple players. If that first player's team is confirmed, output exactly: Player Name, Team Name. If that first player is waived, released, bought out, or has no confirmed team, output exactly 'Nothing Important' — do not check any other player in the text. Examples: 'Celtics sign Holiday' -> 'Jrue Holiday, Boston Celtics'. 'Golden State Warriors trade Stephen Curry to Orlando Magic' -> 'Stephen Curry, Orlando Magic'. 'Nets re-sign Carter Ellis' -> 'Carter Ellis, Brooklyn Nets'. 'Nets waive Carter Ellis' -> 'Nothing Important'. 'Warriors waive Green' -> 'Nothing Important'.",
         decline_words=["offer sheet", "right to match", "days to match", "hours to match", "matching period", "in talks", "discussing", "exploring", "monitoring", "checking in on", "gauging interest", "expressed interest", "linked to", "eyeing", "mutual interest", "floated", "downplay", "denies", "denied", "shot down", "no truth to", "quashed", "not expected to be traded", "will finish out his contract", "bought out", 'buyout', "collapsed", "stalled", "unlikely", "remains unclear"]
     )
-    
-    real = Kalshi(
-        'data/credentials/final.pem',
-        'e0aa7334-2f4a-481c-8ba6-a3773e57599c',
-        'https://external-api.kalshi.com'
-    )
-    
     await next_team.add_account()
+    map_prompt = "Only return TWO WORDS A FIRST NAME AND LAST ex. (John Adams) What is the NBA players full name in this title or rather what are the first two words of this sentence what is the name? Dont say anything else just his first and last name from this title I am about to show you:"
+    player_to_ticker = await real.create_event_name_map("kxnextteamnba".upper(), limit=200, map_prompt=map_prompt)
     await next_team.update_id()
     
-    with open('data/runtime/temp_res.json', 'r') as f:
-        player_to_ticker = json.load(f)
-    with open('data/runtime/x_ids.json', 'r') as f:
-        name_to_id = json.load(f)
-
     try:
         while True:
-            message, time = await next_team.ping_account(name_to_id)
+            message, time = await next_team.ping_account()
             if message and ',' in message:
                 print(message)
                 try:
@@ -54,9 +48,15 @@ async def main():
             await time
     finally:
         import datetime
-        with open('data/runtime/x_ids.json', 'w') as f:
-            json.dump(name_to_id, f)
         with open('data/log.txt', 'a') as f:
             f.write(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
 
-asyncio.run(main())
+def mentions():
+    urls = []
+    while True:
+        url = input("Enter any url or enter done if done: ")
+        if url.lower() == 'done':
+            break
+        urls.append(url)
+
+asyncio.run(next_team())
