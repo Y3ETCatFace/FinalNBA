@@ -7,10 +7,12 @@ from pathlib import Path
 from random import uniform, random, randrange
 from sys import stdout
 from time import perf_counter
-import subprocess
 import numpy as np
-from faster_whisper import WhisperModel
-import os
+import threading
+import queue
+from groq import Groq
+import wave
+import io
 #print(user.id, user.username, user.followersCount)
 
 async def ask_ai(prompt):
@@ -63,7 +65,7 @@ class Twitter:
                 searches = json.load(f)
             search = randrange(len(searches))
             await gather(self.api.search(f"{search} lang:en", limit=20))
-            await asyncio.sleep(Twitter.time)
+            await sleep(Twitter.time)
         else:
             await sleep(Twitter.time)
         
@@ -75,6 +77,7 @@ class Twitter:
             await self.api.pool.add_account_cookies(f"my_account{index+1}", f"auth_token={meta['auth_token']}; ct0={meta['ct0']}")
     
     async def update_id(self):
+        subprocess.run(['ollama', 'pull', Twitter.llm_model])
         if not Path('data/runtime/x_ids.json').exists():    
             name_to_id = {}
         else:
@@ -138,10 +141,8 @@ def get_stream_url_fast(webpage_url):
         return stream_url
     except subprocess.CalledProcessError:
         return None 
-def transcribe(file_url):
-    os.environ['HF_TOKEN'] = "fced3b403c0c8cc70f51b03ef3f4b37efa839369"
-    model = WhisperModel("base.en", device="cpu", compute_type="int8")
 
+def transcribe(file_url,):
     ffmpeg_cmd = [
         'ffmpeg',
         '-vn',                     # Block video packets
@@ -153,33 +154,45 @@ def transcribe(file_url):
         '-loglevel', 'quiet',      
         '-'                        # Target output to stdout
     ]
-
     process = subprocess.Popen(ffmpeg_cmd, stdout=subprocess.PIPE, bufsize=10**6)
-
-    CHUNK_SIZE = 32000 * 2
-
+    audio_q = queue.Queue(maxsize=10)
+    CHUNK_SIZE = 80000
     print("Listening live... Transcribing feed now:")
+    model = Groq(api_key="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")
 
-    try:
+    def reader():
         while True:
-            # Pull 3 seconds worth of raw audio bytes from the pipe
             raw_bytes = process.stdout.read(CHUNK_SIZE)
             if not raw_bytes:
+                print('No Bites')
                 break
-            
-            # Convert binary data to floating-point numbers for the AI model
-            audio_array = np.frombuffer(raw_bytes, dtype=np.int16).astype(np.float32) / 32768.0
-            
-            # Feed the array to the transcriber
-            segments, _ = model.transcribe(audio_array, beam_size=3)
-            
-            # Print results instantly as they happen
-            for segment in segments:
-                text = segment.text.strip()
-                if text:
-                    print(f"[Live Text]: {text}")
-    except:
-        pass
+            audio_q.put(raw_bytes)
+    
+    threading.Thread(target=reader, daemon=True).start()
+    while True:    
+        raw_bytes = audio_q.get()
+        audio_array = np.frombuffer(raw_bytes, dtype=np.int16).astype(np.float32) / 32768.0
+        audio_energy = np.sqrt(np.mean(audio_array**2))
+        if audio_energy < 0.002:  # If it's silent, skip the API call completely
+            print('No energy')
+            continue
+
+        wav_buffer = io.BytesIO()
+        with wave.open(wav_buffer, 'wb') as wav_file:
+            wav_file.setnchannels(1)
+            wav_file.setsampwidth(2)
+            wav_file.setframerate(16000)
+            wav_file.writeframes(raw_bytes)
+        wav_buffer.seek(0)
+        
+        segments = model.audio.transcriptions.create(
+            file=('file.wav', wav_buffer, 'audio/wav'),
+            model="whisper-large-v3-turbo",
+            language="en",
+            temperature=0.0
+        ) 
+        return segments.text
+        
 if __name__ == "__main__":
-    base_url = "https://www.twitch.tv/flight23white"
+    base_url = "https://www.twitch.tv/oiyorke"
     transcribe(get_stream_url_fast(base_url))

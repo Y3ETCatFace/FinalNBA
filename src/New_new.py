@@ -8,6 +8,7 @@ async def main():
         'data/credentials/speed-2.pem', 
         '4beb2212-be89-4f64-b02b-fa7cf5ce5b5e', 
         'https://external-api.demo.kalshi.co')
+        
     await test.create_event_name_map("kxnextteamnba".upper(), message, limit=200)
 
 asyncio.run(main())
