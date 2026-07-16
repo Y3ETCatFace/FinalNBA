@@ -17,7 +17,7 @@ class Kalshi:
         self.key_path = key_path
         self.private_key= self.load_private_key()
         self.api_key_id = api_key_id
-        self.url = url    
+        self.url = url  
     
     def load_private_key(self):
         with open(self.key_path, "rb") as f:
@@ -79,19 +79,26 @@ class Kalshi:
         message = self.post("/portfolio/events/orders", payload)
         return message
     
-    def get_events(self, series_ticker, limit=None, status=None, tickers=None):
+    def get_events(self, series_ticker=None, event_ticker=None, limit=None, status=None, tickers=None):
         params = {}
         if series_ticker:
             params['series_ticker'] = series_ticker.upper()
+        if event_ticker:
+            params['event_ticker'] = event_ticker.upper()
         if limit:
             params['limit'] = limit
         if status:
             params['status'] = status
         if tickers:
             params['tickers'] = tickers
+        if series_ticker:
+            tail = "/events"
+        elif event_ticker:
+            tail = '/markets'
         return self.get('/events', params)
     
-    async def create_event_name_map(self, series_ticker, describe_action, limit):
+    
+    async def create_event_name_map(self, series_ticker, limit, map_prompt):
         from engines.fast_scraper import ask_ai
         events = self.get_events(series_ticker=series_ticker, limit=limit)
         responce = events.json()
@@ -99,9 +106,8 @@ class Kalshi:
         for event in responce['events']:
             print(event['title'])
             print(event['event_ticker'])
-            name = await ask_ai(f'{describe_action} {event['title']}')
+            name = await ask_ai(f'{map_prompt} {event['title']}')
             name_to_event_ticker[name.upper()] = event['event_ticker']
-        with open('data/runtime/temp_res.json', 'w') as f:
-            json.dump(name_to_event_ticker, f, indent=4)
+        return name_to_event_ticker
         
 
