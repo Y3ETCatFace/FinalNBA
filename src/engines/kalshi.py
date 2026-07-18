@@ -97,7 +97,6 @@ class Kalshi:
             tail = '/markets'
         return self.get('/events', params)
     
-    
     async def create_event_name_map(self, series_ticker, limit, map_prompt):
         from engines.fast_scraper import ask_ai
         events = self.get_events(series_ticker=series_ticker, limit=limit)

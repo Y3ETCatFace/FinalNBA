@@ -10,10 +10,12 @@ from time import perf_counter
 import numpy as np
 import threading
 import queue
-from groq import Groq
+from groq import AsyncGroq
 import wave
 import io
 from twscrape import API
+import requests
+from bs4 import BeautifulSoup as bs
 #print(user.id, user.username, user.followersCount)
 
 async def ask_ai(prompt):
@@ -27,7 +29,7 @@ async def ask_ai(prompt):
             }
         )
     except:
-        subprocess.run(['ollama', 'pull', Twitter.llm_model])
+        await asyncio.create_subprocess_exec(['ollama', 'pull', Twitter.llm_model])
         response = await AsyncClient().chat(
             model=Twitter.llm_model,
             messages=[{'role': 'user', 'content': prompt}],
@@ -58,13 +60,15 @@ class Twitter:
         self.name = name
         self.decline_words = decline_words
         self.last_tweet_id = {}
+        with open('data/runtime/random_searches.json') as f:
+            self.searches = json.load(f)
+        self.ready = False
         
     async def confuse_and_wait(self):
         if random() <= .05:
             print('radnom')
-            with open('data/runtime/random_searches.json') as f:
-                searches = json.load(f)
-            search = randrange(len(searches))
+
+            search = randrange(len(self.searches))
             await gather(Twitter.api.search(f"{search} lang:en", limit=20))
             await sleep(Twitter.time)
         else:
@@ -98,7 +102,7 @@ class Twitter:
     
     async def get_last_tweets(self, handle, single_request=False, num_tweets=1):
         if single_request:
-            self.update_id()
+            await self.update_id()
         try:
             name_to_id = self.name_to_id
         except:
@@ -117,6 +121,10 @@ class Twitter:
         return response.upper()
         
     async def ping_account(self):
+        if not self.ready:
+            await self.add_account()
+            await self.update_id()
+            self.ready = True
         for handle in self.sources:
             tweets = await asyncio.wait_for(self.get_last_tweets(handle), timeout=15)
             time = asyncio.create_task(self.confuse_and_wait())
@@ -130,20 +138,26 @@ class Twitter:
         return None, time
 
 class Mentions:
-    def __init__(self, webpage_url, groq_key, seconds):
-        self.webpage_url = webpage_url
+    def __init__(self, webpage_urls, groq_key, seconds):
+        self.webpage_urls = webpage_urls
         self.groq_key = groq_key
         self.seconds = seconds
-    
-    def transcribe(self):
-        model = Groq(api_key=self.groq_key)
-        CHUNK_SIZE = 16000 * self.seconds
+
+    async def transcribe(self, index):
+        model = AsyncGroq(api_key=self.groq_key)
+        CHUNK_SIZE = 16000 * self.seconds  
         audio_q = queue.Queue(maxsize=10)
         try:
-            cmd = ["yt-dlp", "-g", "-f", "bestaudio/best", self.webpage_url]
-            stream_url = subprocess.check_output(cmd, stderr=subprocess.DEVNULL).decode("utf-8").strip()
-        except subprocess.CalledProcessError as e:
+            # Use asyncio subprocess for yt-dlp to prevent blocking the event loop
+            cmd = ["yt-dlp", "-g", "-f", "bestaudio/best", self.webpage_urls[index]]
+            proc = await asyncio.create_subprocess_exec(*cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.DEVNULL)
+            stdout, _ = await proc.communicate()
+            stream_url = stdout.decode("utf-8").strip()
+            print(stream_url)
+        except Exception as e:
             print(e)
+            return None
+            
         ffmpeg_cmd = [
             'ffmpeg',
             '-vn',                     # Block video packets
@@ -157,7 +171,7 @@ class Mentions:
         ]
         process = subprocess.Popen(ffmpeg_cmd, stdout=subprocess.PIPE, bufsize=10**6)
         print("Listening live... Transcribing feed now:")
-    
+
         def reader():
             while True:
                 raw_bytes = process.stdout.read(CHUNK_SIZE)
@@ -166,11 +180,13 @@ class Mentions:
                     break
                 audio_q.put(raw_bytes)
         threading.Thread(target=reader, daemon=True).start()
-        raw_bytes = audio_q.get()
-       
-        with np.frombuffer(raw_bytes, dtype=np.int16).astype(np.float32) / 32768.0 as audio_array:
-            audio_energy = np.sqrt(np.mean(audio_array**2))
-            if audio_energy < 0.002:  # If it's silent, skip the API call completely
+        
+        # Run the blocking queue.get() in an executor so it doesn't block the asyncio thread
+        loop = asyncio.get_running_loop()
+        raw_bytes = await loop.run_in_executor(None, audio_q.get)
+    
+        audio_energy = np.sqrt(np.mean((np.frombuffer(raw_bytes, dtype=np.int16).astype(np.float32) / 32768.0)**2))
+        if audio_energy < 0.002:  # If it's silent, skip the API call completely
                 print('No energy')
                 return None
         wav_buffer = io.BytesIO()
@@ -181,13 +197,16 @@ class Mentions:
             wav_file.writeframes(raw_bytes)
         wav_buffer.seek(0)
         
-        segments = model.audio.transcriptions.create(
+        # Await the asynchronous Groq API call
+        segments = await model.audio.transcriptions.create(
             file=('file.wav', wav_buffer, 'audio/wav'),
             model="whisper-large-v3-turbo",
             language="en",
             temperature=0.0
         ) 
         return segments.text
-        
+            
 if __name__ == "__main__":
-    base_url = "https://www.twitch.tv/oiyorke"
+    far = Mentions(groq_key="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",
+                   seconds=3, webpage_urls=["https://www.youtube.com/watch?v=YpQGEQtBG7g&pp=ugUEEgJlbg%3D%3D"])
+    asyncio.run(far.transcribe())

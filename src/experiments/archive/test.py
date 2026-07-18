@@ -5,7 +5,7 @@ import asyncio
 import json
 
 test = Kalshi(
-    'data/speed-2.pem', 
+    'data/credentials/speed-2.pem', 
     '4beb2212-be89-4f64-b02b-fa7cf5ce5b5e', 
     'https://external-api.demo.kalshi.co')
 
